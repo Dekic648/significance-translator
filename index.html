@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Significance Translator</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{--bg:#fff;--bg2:#f5f4f0;--bg3:#eeecea;--t1:#1a1a18;--t2:#5f5e5a;--t3:#888780;--b1:rgba(0,0,0,0.12);--b2:rgba(0,0,0,0.22);--purple:#7F77DD;--purple-d:#534AB7;--purple-l:#EEEDFE;--teal:#1D9E75;--teal-l:#E1F5EE;--red:#E24B4A;--red-l:#FCEBEB;--amber:#BA7517;--amber-l:#FAEEDA;--rm:8px;--rl:12px}
+  @media(prefers-color-scheme:dark){:root{--bg:#1c1c1a;--bg2:#252523;--bg3:#2e2e2b;--t1:#f0ede8;--t2:#b4b2a9;--t3:#888780;--b1:rgba(255,255,255,0.1);--b2:rgba(255,255,255,0.2);--purple:#9F99E8;--purple-d:#AFA9EC;--purple-l:#26215C;--teal:#5DCAA5;--teal-l:#04342C;--red:#F09595;--red-l:#501313;--amber:#EF9F27;--amber-l:#412402}}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg3);color:var(--t1);min-height:100vh;padding:2rem 1rem}
+  .page{max-width:820px;margin:0 auto;background:var(--bg);border-radius:var(--rl);border:0.5px solid var(--b1);padding:2rem 2.5rem}
+  h1{font-size:20px;font-weight:500;margin-bottom:4px}
+  .sub{font-size:13px;color:var(--t2);margin-bottom:2rem}
+  .sl{font-size:10px;font-weight:500;color:var(--t3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px}
+  .input-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:1.5rem}
+  @media(max-width:560px){.input-grid{grid-template-columns:1fr 1fr}}
+  .field{display:flex;flex-direction:column;gap:6px}
+  .field label{font-size:12px;color:var(--t2)}
+  .field input,.field select{padding:8px 10px;border:0.5px solid var(--b2);border-radius:var(--rm);background:var(--bg);color:var(--t1);font-size:14px}
+  .field input:focus,.field select:focus{outline:none;border-color:var(--purple)}
+  .verdict{border-radius:var(--rl);padding:1.25rem 1.5rem;margin-bottom:1.25rem;display:flex;gap:14px;align-items:flex-start}
+  .verdict-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;margin-top:4px}
+  .verdict-text{font-size:14px;line-height:1.7}
+  .verdict-text strong{font-weight:500}
+  .section{margin-bottom:1.25rem}
+  .misconceptions{display:flex;flex-direction:column;gap:8px}
+  .myth{background:var(--red-l);border-radius:var(--rm);padding:10px 12px;display:flex;gap:10px;align-items:flex-start}
+  .myth-x{color:var(--red);font-weight:500;flex-shrink:0;font-size:14px}
+  .myth-text{font-size:12px;color:var(--t1);line-height:1.6}
+  .copy-box{border:0.5px solid var(--b1);border-radius:var(--rl);padding:1rem 1.25rem}
+  .copy-header{font-size:11px;color:var(--t3);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+  .copy-btn{font-size:11px;padding:3px 8px;border:0.5px solid var(--b2);border-radius:var(--rm);background:transparent;color:var(--t3);cursor:pointer}
+  .copy-btn:hover{color:var(--t1);background:var(--bg2)}
+  .copy-text{font-size:13px;color:var(--t1);line-height:1.7}
+  .effect-meter{margin-bottom:1.25rem}
+  .meter-track{height:8px;background:var(--bg2);border-radius:4px;position:relative;margin:8px 0}
+  .meter-fill{height:8px;border-radius:4px;transition:width .3s}
+  .meter-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--t3)}
+  .tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:20px;margin-right:4px;margin-bottom:4px}
+  .tag-sig{background:var(--teal-l);color:var(--teal)}
+  .tag-ns{background:var(--red-l);color:var(--red)}
+  .tag-small{background:var(--amber-l);color:var(--amber)}
+  .tag-med{background:var(--purple-l);color:var(--purple-d)}
+  .tag-large{background:var(--teal-l);color:var(--teal)}
+  .tag-practical{background:var(--bg2);color:var(--t2)}
+  .divider{height:0.5px;background:var(--b1);margin:1.25rem 0}
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>Statistical significance translator</h1>
+  <p class="sub">Enter your result. Get plain English, a stakeholder sentence, and a list of what this does and doesn't mean.</p>
+
+  <div class="input-grid">
+    <div class="field">
+      <label>p-value</label>
+      <input type="number" id="pval" value="0.03" step="0.001" min="0" max="1" oninput="render()">
+    </div>
+    <div class="field">
+      <label>Sample size (n)</label>
+      <input type="number" id="nn" value="22" min="1" oninput="render()">
+    </div>
+    <div class="field">
+      <label>Effect size</label>
+      <select id="es" onchange="render()">
+        <option value="none">— not provided —</option>
+        <option value="small">Small (d ≈ 0.2 / r ≈ 0.1)</option>
+        <option value="medium" selected>Medium (d ≈ 0.5 / r ≈ 0.3)</option>
+        <option value="large">Large (d ≈ 0.8 / r ≈ 0.5)</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>What was tested</label>
+      <select id="ctx" onchange="render()">
+        <option value="completion">Task completion rate</option>
+        <option value="time">Task time</option>
+        <option value="satisfaction">Satisfaction score</option>
+        <option value="errors">Error rate</option>
+        <option value="generic" selected>General metric</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Alpha threshold</label>
+      <select id="alpha" onchange="render()">
+        <option value="0.10">0.10</option>
+        <option value="0.05" selected>0.05</option>
+        <option value="0.01">0.01</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Publishing context</label>
+      <select id="pub" onchange="render()">
+        <option value="internal">Internal / product team</option>
+        <option value="external">Published research</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="verdict" id="verdict"></div>
+
+  <div class="section">
+    <div class="sl">Effect size interpretation</div>
+    <div class="effect-meter">
+      <div class="meter-track"><div class="meter-fill" id="meter-fill"></div></div>
+      <div class="meter-labels"><span>negligible</span><span>small</span><span>medium</span><span>large</span></div>
+    </div>
+    <div id="effect-tags"></div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="section">
+    <div class="sl">Common misconceptions about this result</div>
+    <div class="misconceptions" id="myths"></div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="copy-box">
+    <div class="copy-header">Stakeholder sentence — ready to paste <button class="copy-btn" onclick="copyText()">copy</button></div>
+    <div class="copy-text" id="stakeholder"></div>
+  </div>
+</div>
+
+<script>
+function render(){
+  const p = parseFloat(document.getElementById('pval').value)||0.05;
+  const n = parseInt(document.getElementById('nn').value)||20;
+  const es = document.getElementById('es').value;
+  const ctx = document.getElementById('ctx').value;
+  const alpha = parseFloat(document.getElementById('alpha').value)||0.05;
+  const pub = document.getElementById('pub').value;
+
+  const sig = p < alpha;
+  const ctxMap = {completion:'the completion rate difference',time:'the task time difference',satisfaction:'the satisfaction score difference',errors:'the error rate difference',generic:'the observed difference'};
+  const ctxLabel = ctxMap[ctx]||'the observed difference';
+
+  const verdictEl = document.getElementById('verdict');
+  const verdictDot = document.createElement('div');
+
+  let verdictHTML = '';
+  if(sig){
+    verdictEl.style.background='var(--teal-l)';verdictEl.style.borderColor='var(--teal)';
+    const dotCol='var(--teal)';
+    verdictHTML = `<div class="verdict-dot" style="background:${dotCol}"></div><div class="verdict-text">
+      <strong>Statistically significant</strong> at α = ${alpha} (p = ${p.toFixed(3)}).<br>
+      ${ctxLabel.charAt(0).toUpperCase()+ctxLabel.slice(1)} is unlikely to be due to chance alone — we'd see results this extreme in fewer than ${(p*100).toFixed(1)}% of studies if there were truly no effect.
+      ${es!=='none' ? ' The '+es+' effect size suggests this is also '+(es==='small'?'a modest':'a meaningful')+' real-world difference.' : ''}
+    </div>`;
+  } else {
+    verdictEl.style.background='var(--bg2)';verdictEl.style.borderColor='var(--b1)';
+    verdictHTML = `<div class="verdict-dot" style="background:var(--t3)"></div><div class="verdict-text">
+      <strong>Not statistically significant</strong> at α = ${alpha} (p = ${p.toFixed(3)}).<br>
+      This does not prove there is no effect — it means the data are insufficient to distinguish a real effect from chance. With n = ${n}, ${p>0.15?'the study may simply be underpowered':'consider whether the study had adequate power'}.
+    </div>`;
+  }
+  verdictEl.innerHTML = verdictHTML;
+
+  const esMap = {none:0,small:20,medium:50,large:85};
+  const esVal = esMap[es]||0;
+  const meterFill = document.getElementById('meter-fill');
+  meterFill.style.width = esVal+'%';
+  meterFill.style.background = es==='small'?'#BA7517':es==='medium'?'#7F77DD':es==='large'?'#1D9E75':'#b4b2a9';
+
+  let tagsHTML = '';
+  if(sig) tagsHTML += '<span class="tag tag-sig">significant</span>';
+  else tagsHTML += '<span class="tag tag-ns">not significant</span>';
+  if(es==='small') tagsHTML += '<span class="tag tag-small">small effect</span>';
+  if(es==='medium') tagsHTML += '<span class="tag tag-med">medium effect</span>';
+  if(es==='large') tagsHTML += '<span class="tag tag-large">large effect</span>';
+  if(sig && es==='small') tagsHTML += '<span class="tag tag-practical">may lack practical importance</span>';
+  if(!sig && es!=='none' && es!=='small') tagsHTML += '<span class="tag tag-practical">may be underpowered</span>';
+  if(pub==='internal' && !sig) tagsHTML += '<span class="tag tag-practical">acceptable for product decisions</span>';
+  document.getElementById('effect-tags').innerHTML = tagsHTML;
+
+  const myths = [];
+  if(sig){
+    myths.push({x:'p < '+alpha+' does not mean the effect is large.', t:'Statistical significance only tells you the result is unlikely under the null hypothesis. A tiny, meaningless difference can be significant at large n.'});
+    myths.push({x:'p = '+p.toFixed(3)+' is not the probability that the null hypothesis is true.', t:'It is the probability of observing results at least this extreme if the null hypothesis were true. These are different things.'});
+    if(es==='small') myths.push({x:'Significant ≠ important.', t:'The effect size is small. Even though the result is real, the practical difference may not matter to users or the product.'});
+    myths.push({x:'"p < 0.05" is not a gold standard.', t:'The 0.05 threshold is a convention, not a law of nature. For internal product research, acting on clear trends even at p = 0.08 is often reasonable.'});
+  } else {
+    myths.push({x:'p ≥ '+alpha+' does not prove there is no effect.', t:'Absence of evidence is not evidence of absence. The study may lack power to detect a real difference, especially at n = '+n+'.'});
+    myths.push({x:'This result is not "proof the designs are equivalent."', t:'Equivalence requires a dedicated equivalence test (TOST). A non-significant t-test cannot make that claim.'});
+    if(n<20) myths.push({x:'Small sample sizes make false negatives likely.', t:'With n = '+n+', the study has limited power to detect effects unless they are very large. Consider running more participants before concluding no difference exists.'});
+  }
+
+  document.getElementById('myths').innerHTML = myths.map(m=>`
+    <div class="myth"><div class="myth-x">✕</div><div class="myth-text"><strong>${m.x}</strong><br>${m.t}</div></div>
+  `).join('');
+
+  let sentence = '';
+  const pStr = 'p = '+p.toFixed(3);
+  if(sig){
+    const esStr = es!=='none' ? ' The effect size is '+es+', suggesting this is '+(es==='small'?'a real but modest':'a practically meaningful')+' difference.' : '';
+    sentence = `The analysis found a statistically significant difference in ${ctxLabel.replace('the ','')} (${pStr}), meaning this result would occur by chance less than ${(p*100).toFixed(1)}% of the time if there were truly no effect.${esStr} This supports moving forward with the design that performed better.`;
+  } else {
+    sentence = `The analysis did not find a statistically significant difference in ${ctxLabel.replace('the ','')} (${pStr}). This does not mean the designs are identical — the study may not have had enough participants to detect a real difference. ${n<20?'We recommend running additional participants before drawing conclusions.':'We recommend reviewing whether the sample size was adequate for the expected effect size.'}`;
+  }
+  document.getElementById('stakeholder').textContent = sentence;
+}
+
+function copyText(){
+  navigator.clipboard.writeText(document.getElementById('stakeholder').textContent);
+  const btn=document.querySelector('.copy-btn');btn.textContent='copied!';setTimeout(()=>btn.textContent='copy',1500);
+}
+
+render();
+</script>
+</body>
+</html>
